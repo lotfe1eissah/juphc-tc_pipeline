@@ -3,26 +3,30 @@ kind: Pipeline
 metadata:
   name: tax-calculator-pipeline
 spec:
-  params:
-    - name: image-url
-      type: string
   workspaces:
-    - name: shared-workspace
+    - name: pipeline-workspace
   tasks:
+    - name: fetch-repo
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: pipeline-workspace
+
     - name: test-app
+      runAfter:
+        - fetch-repo
       taskRef:
         name: run-unit-tests
       workspaces:
         - name: source
-          workspace: shared-workspace
-    - name: build-and-deploy-image
-      taskRef:
-        name: build-and-push-image
+          workspace: pipeline-workspace
+
+    - name: build-image
       runAfter:
         - test-app
-      params:
-        - name: image-location
-          value: $(params.image-url)
+      taskRef:
+        name: buildah
       workspaces:
         - name: source
-          workspace: shared-workspace
+          workspace: pipeline-workspace
